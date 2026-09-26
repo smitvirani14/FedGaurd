@@ -34,16 +34,33 @@ from data_utils import (  # noqa: E402
     load_partition,
     stratified_split,
 )
+from dp_engine import (  # noqa: E402
+    DELTA,
+    MAX_GRAD_NORM,
+    NOISE_MULTIPLIER,
+    get_privacy_spent,
+    make_private,
+    unwrap_private,
+)
 from metrics_logger import compute_metrics  # noqa: E402
 from model import DEVICE, build_model, predict_probs  # noqa: E402
 
 # ---- local training hyper-parameters (identical on every node) ----
 LOCAL_EPOCHS = 1
 BATCH_SIZE = 512
-LR = 1e-3
+LR = 1e-3        # plain federated / centralized training
 
-# Phase 3 will introduce DP here; kept as a module-level toggle so the demo can
-# flip privacy on/off between runs and compare the results.
+# DP-SGD needs a higher learning rate than plain training: the injected noise
+# inflates Adam's second-moment estimate, which otherwise shrinks every step
+# into nothing (measured: lr=1e-3 -> recall 0.00, lr=5e-3 -> recall 0.67 after
+# the same 10 rounds at the same epsilon). Everything else - batch size, epochs,
+# loss, class weights - stays identical so the comparison stays honest.
+DP_LR = 5e-3
+
+# Phase 3 privacy toggle: run with USE_DP = True (or --use-dp) to add DP noise
+# before weights leave the node, and USE_DP = False (or --no-dp) for the plain
+# federated baseline. The comparison of these two runs IS the project's
+# privacy-utility tradeoff evidence, so it must be easy to flip in a demo.
 USE_DP = False
 
 
@@ -84,10 +101,16 @@ class FlowerClient(fl.client.NumPyClient):
 
         self.model = build_model(input_dim=N_FEATURES)
         self.criterion = nn.BCELoss()
-        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=LR)
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=DP_LR if USE_DP else LR)
+
+        # DP state: the engine is created once and reused every round so its
+        # accountant accumulates epsilon across the whole training run.
+        self.privacy_engine = None
+        self.epsilon = None
 
         print(f"[client:{partition}] loaded {len(self.X_train):,} train / "
-              f"{len(self.X_test):,} test rows, pos_weight={self.pos_weight:.1f}", flush=True)
+              f"{len(self.X_test):,} test rows, pos_weight={self.pos_weight:.1f} "
+              f"DP={'ON' if USE_DP else 'OFF'}", flush=True)
 
     # ------------------------------------------------------------------ #
     def get_parameters(self, config) -> list[np.ndarray]:
@@ -102,19 +125,49 @@ class FlowerClient(fl.client.NumPyClient):
         self.model.load_state_dict(state)
 
     # ------------------------------------------------------------------ #
+    def _train_local(self, model, optimizer, loader, epochs: int) -> None:
+        """The one training loop shared by the plain and the DP-SGD path.
+
+        Keeping them identical (same loss, same class weights, same epochs) is
+        what makes the DP vs no-DP comparison meaningful.
+        """
+        model.train()
+        for _ in range(epochs):
+            for xb, yb, wb in loader:
+                xb, yb, wb = xb.to(DEVICE), yb.to(DEVICE), wb.to(DEVICE)
+                optimizer.zero_grad()
+                out = model(xb)
+                loss = (self.criterion(out, yb) * wb).mean()
+                loss.backward()
+                optimizer.step()
+
     def fit(self, parameters, config):
         """Receive global weights, train locally, return updated weights."""
         self._set_parameters(parameters)
-
+        epochs = int(config.get("local_epochs", LOCAL_EPOCHS))
+        # evaluate() left the module in eval() mode; Opacus refuses to wrap a
+        # model that is not in training mode, so restore it before make_private.
         self.model.train()
-        for _ in range(int(config.get("local_epochs", LOCAL_EPOCHS))):
-            for xb, yb, wb in self.loader:
-                xb, yb, wb = xb.to(DEVICE), yb.to(DEVICE), wb.to(DEVICE)
-                self.optimizer.zero_grad()
-                out = self.model(xb)
-                loss = (self.criterion(out, yb) * wb).mean()
-                loss.backward()
-                self.optimizer.step()
+
+        if USE_DP:
+            # DP-SGD: clip every sample's gradient and add Gaussian noise
+            # BEFORE the update, so the weights we return are already noisy.
+            self.privacy_engine, private_model, private_optimizer, private_loader = make_private(
+                model=self.model,
+                optimizer=self.optimizer,
+                data_loader=self.loader,
+                noise_multiplier=NOISE_MULTIPLIER,
+                max_grad_norm=MAX_GRAD_NORM,
+                privacy_engine=self.privacy_engine,   # reuse -> cumulative epsilon
+            )
+            self._train_local(private_model, private_optimizer, private_loader, epochs)
+            unwrap_private(private_model, private_optimizer)
+            self.epsilon = get_privacy_spent(self.privacy_engine, DELTA)
+            print(f"[client:{self.partition}] DP run: noise_multiplier={NOISE_MULTIPLIER}, "
+                  f"max_grad_norm={MAX_GRAD_NORM}, cumulative epsilon={self.epsilon:.4f}",
+                  flush=True)
+        else:
+            self._train_local(self.model, self.optimizer, self.loader, epochs)
 
         weights = self.get_parameters(config)
 
@@ -135,11 +188,8 @@ class FlowerClient(fl.client.NumPyClient):
             "train_samples": float(len(self.X_train)),
             "pos_weight": float(self.pos_weight),
         }
-        if USE_DP:
-            eps = self._dp_epsilon()
-            if eps is not None:
-                fit_metrics["epsilon"] = float(eps)
-                print(f"[client:{self.partition}] local DP epsilon = {eps:.4f}", flush=True)
+        if USE_DP and self.epsilon is not None:
+            fit_metrics["epsilon"] = float(self.epsilon)
 
         return weights, len(self.X_train), fit_metrics
 
@@ -159,13 +209,13 @@ class FlowerClient(fl.client.NumPyClient):
               f"auc={metrics['auc']:.4f}", flush=True)
         return loss, len(self.X_test), metrics
 
-    # Phase 3 replaces this with the real Opacus budget query.
     def _dp_epsilon(self):
-        return None
+        """Cumulative epsilon spent by this node's accountant (None when DP is off)."""
+        return self.epsilon
 
 
 def main() -> None:
-    global LOCAL_EPOCHS
+    global LOCAL_EPOCHS, USE_DP
 
     parser = argparse.ArgumentParser(description="FedGuard Flower client")
     parser.add_argument("--partition", choices=["node1", "node2"], required=True,
@@ -174,9 +224,15 @@ def main() -> None:
                         default=None,
                         help="orchestrator host:port (default: localhost from .env)")
     parser.add_argument("--local-epochs", type=int, default=LOCAL_EPOCHS)
+    parser.add_argument("--use-dp", dest="use_dp", action="store_true", default=None,
+                        help="force differential privacy ON for this run")
+    parser.add_argument("--no-dp", dest="use_dp", action="store_false",
+                        help="force differential privacy OFF for this run")
     args = parser.parse_args()
 
     LOCAL_EPOCHS = args.local_epochs
+    if args.use_dp is not None:
+        USE_DP = args.use_dp
 
     load_env()
     server_address = args.server_address or f"localhost:{os.getenv('FLOWER_SERVER_PORT', '8080')}"

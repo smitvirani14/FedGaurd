@@ -27,3 +27,8 @@ results/*.json
 .DS_Store
 .idea/
 .vscode/
+
+# cloud service-account keys (secrets)
+gcp-key.json
+*-key.json
+*_service_account.json
