@@ -1,0 +1,29 @@
+# secrets / credentials
+.env
+*.pem
+kaggle.json
+*-service-account*.json
+credentials.json
+
+# raw dataset (too large / sensitive for git)
+data/raw/
+data/*.csv
+
+# python
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# outputs
+results/*.csv
+results/*.json
+*.pt
+
+# editors / os
+.DS_Store
+.idea/
+.vscode/
