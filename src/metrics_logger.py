@@ -60,7 +60,9 @@ def log_round(round_num, source, accuracy, precision, recall, f1, auc, epsilon=N
         accuracy / precision / recall / f1 / auc: sklearn metrics on the eval split.
         epsilon:   differential-privacy budget spent so far (None when DP is off).
         results_path: override the target CSV (used to write per-run extracts).
+            None falls back to results/results.csv.
     """
+    results_path = results_path or DEFAULT_CSV
     os.makedirs(os.path.dirname(results_path), exist_ok=True)
     write_header = not os.path.exists(results_path) or os.path.getsize(results_path) == 0
 
@@ -89,6 +91,22 @@ def reset_results(results_path=DEFAULT_CSV):
     """Delete an existing results file so a fresh run starts from a clean slate."""
     if os.path.exists(results_path):
         os.remove(results_path)
+
+
+def reset_results_for_source(source, results_path=DEFAULT_CSV):
+    """Drop only the rows of one run (e.g. re-running 'federated' or
+    'federated_dp') while keeping every other run's history intact."""
+    if not os.path.exists(results_path):
+        return
+    with open(results_path, newline="", encoding="utf-8") as fh:
+        rows = list(csv.DictReader(fh))
+    kept = [r for r in rows if r["source"] != source]
+    if len(kept) == len(rows):
+        return
+    with open(results_path, "w", newline="", encoding="utf-8") as fh:
+        writer = csv.DictWriter(fh, fieldnames=FIELDS)
+        writer.writeheader()
+        writer.writerows(kept)
 
 
 def filter_results(source, results_path=DEFAULT_CSV, out_path=None):
