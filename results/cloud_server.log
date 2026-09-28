@@ -1,0 +1,114 @@
+======================================================================
+PHASE 2 - FedAvg orchestrator  |  rounds=5  bind=0.0.0.0:8080  source=federated_cloud
+======================================================================
+[93mWARNING [0m:   DEPRECATED FEATURE: flwr.server.start_server() is deprecated.
+	Instead, use the `flower-superlink` CLI command to start a SuperLink as shown below:
+
+		$ flower-superlink --insecure
+
+	To view usage and all available options, run:
+
+		$ flower-superlink --help
+
+	Using `start_server()` is deprecated.
+
+            This is a deprecated feature. It will be removed
+            entirely in future versions of Flower.
+        
+[92mINFO [0m:      Starting Flower server, config: num_rounds=5, no round_timeout
+[92mINFO [0m:      Flower ECE: gRPC server running (5 rounds), SSL is disabled
+[92mINFO [0m:      [INIT]
+[92mINFO [0m:      Using initial global parameters provided by strategy
+[92mINFO [0m:      Starting evaluation of initial global parameters
+[92mINFO [0m:      Evaluation returned no results (`None`)
+[92mINFO [0m:      
+[92mINFO [0m:      [ROUND 1]
+[server] client connected: cid=952a7ed05a574ac89c21a7a545ed49bb peer=ipv6:%5B::1%5D:39850 connected=1
+[server] client connected: cid=cd6ce9311da4481fa3243fde289cabff peer=ipv4:65.1.248.113:41032 connected=2
+[92mINFO [0m:      configure_fit: strategy sampled 2 clients (out of 2)
+[92mINFO [0m:      aggregate_fit: received 2 results and 0 failures
+[server] round 1: aggregated fit metrics {'pos_weight': 606.118, 'train_samples': 118495.0134}
+[92mINFO [0m:      configure_evaluate: strategy sampled 2 clients (out of 2)
+[92mINFO [0m:      aggregate_evaluate: received 2 results and 0 failures
+[server] round 1: logged federated_cloud row (acc=0.9988 recall=0.4255 auc=0.9395)
+[92mINFO [0m:      
+[92mINFO [0m:      [ROUND 2]
+[92mINFO [0m:      configure_fit: strategy sampled 2 clients (out of 2)
+[92mINFO [0m:      aggregate_fit: received 2 results and 0 failures
+[server] round 2: aggregated fit metrics {'pos_weight': 606.118, 'train_samples': 118495.0134}
+[92mINFO [0m:      configure_evaluate: strategy sampled 2 clients (out of 2)
+[92mINFO [0m:      aggregate_evaluate: received 2 results and 0 failures
+[server] round 2: logged federated_cloud row (acc=0.9994 recall=0.8116 auc=0.9789)
+[92mINFO [0m:      
+[92mINFO [0m:      [ROUND 3]
+[92mINFO [0m:      configure_fit: strategy sampled 2 clients (out of 2)
+[92mINFO [0m:      aggregate_fit: received 2 results and 0 failures
+[server] round 3: aggregated fit metrics {'pos_weight': 606.118, 'train_samples': 118495.0134}
+[92mINFO [0m:      configure_evaluate: strategy sampled 2 clients (out of 2)
+[92mINFO [0m:      aggregate_evaluate: received 2 results and 0 failures
+[server] round 3: logged federated_cloud row (acc=0.9994 recall=0.8423 auc=0.9883)
+[92mINFO [0m:      
+[92mINFO [0m:      [ROUND 4]
+[92mINFO [0m:      configure_fit: strategy sampled 2 clients (out of 2)
+[92mINFO [0m:      aggregate_fit: received 2 results and 0 failures
+[server] round 4: aggregated fit metrics {'pos_weight': 606.118, 'train_samples': 118495.0134}
+[92mINFO [0m:      configure_evaluate: strategy sampled 2 clients (out of 2)
+[92mINFO [0m:      aggregate_evaluate: received 2 results and 0 failures
+[server] round 4: logged federated_cloud row (acc=0.9994 recall=0.8423 auc=0.9906)
+[92mINFO [0m:      
+[92mINFO [0m:      [ROUND 5]
+[92mINFO [0m:      configure_fit: strategy sampled 2 clients (out of 2)
+[92mINFO [0m:      aggregate_fit: received 2 results and 0 failures
+[server] round 5: aggregated fit metrics {'pos_weight': 606.118, 'train_samples': 118495.0134}
+[92mINFO [0m:      configure_evaluate: strategy sampled 2 clients (out of 2)
+[92mINFO [0m:      aggregate_evaluate: received 2 results and 0 failures
+[server] round 5: logged federated_cloud row (acc=0.9994 recall=0.8423 auc=0.9915)
+[92mINFO [0m:      
+[92mINFO [0m:      [SUMMARY]
+[92mINFO [0m:      Run finished 5 round(s) in 62.84s
+[92mINFO [0m:      	History (loss, distributed):
+[92mINFO [0m:      		round 1: 0.005568758685723923
+[92mINFO [0m:      		round 2: 0.0034289544004994558
+[92mINFO [0m:      		round 3: 0.003205472837374546
+[92mINFO [0m:      		round 4: 0.0031385498047373016
+[92mINFO [0m:      		round 5: 0.003078176776544769
+[92mINFO [0m:      	History (metrics, distributed, fit):
+[92mINFO [0m:      	{'pos_weight': [(1, 606.1180469493746),
+[92mINFO [0m:      	                (2, 606.1180469493746),
+[92mINFO [0m:      	                (3, 606.1180469493746),
+[92mINFO [0m:      	                (4, 606.1180469493746),
+[92mINFO [0m:      	                (5, 606.1180469493746)],
+[92mINFO [0m:      	 'train_samples': [(1, 118495.01335118173),
+[92mINFO [0m:      	                   (2, 118495.01335118173),
+[92mINFO [0m:      	                   (3, 118495.01335118173),
+[92mINFO [0m:      	                   (4, 118495.01335118173),
+[92mINFO [0m:      	                   (5, 118495.01335118173)]}
+[92mINFO [0m:      	History (metrics, distributed, evaluate):
+[92mINFO [0m:      	{'accuracy': [(1, 0.9987886661282961),
+[92mINFO [0m:      	              (2, 0.9993679997191109),
+[92mINFO [0m:      	              (3, 0.999403110845827),
+[92mINFO [0m:      	              (4, 0.9994382219725431),
+[92mINFO [0m:      	              (5, 0.999403110845827)],
+[92mINFO [0m:      	 'auc': [(1, 0.939453490572189),
+[92mINFO [0m:      	         (2, 0.9789240098522567),
+[92mINFO [0m:      	         (3, 0.9883159008754396),
+[92mINFO [0m:      	         (4, 0.9905584649475813),
+[92mINFO [0m:      	         (5, 0.991497347340943)],
+[92mINFO [0m:      	 'f1': [(1, 0.5451081594816221),
+[92mINFO [0m:      	        (2, 0.811521224511162),
+[92mINFO [0m:      	        (3, 0.8256100923511561),
+[92mINFO [0m:      	        (4, 0.8333463670091598),
+[92mINFO [0m:      	        (5, 0.8256100923511561)],
+[92mINFO [0m:      	 'precision': [(1, 0.7749364617803226),
+[92mINFO [0m:      	               (2, 0.8180020814264243),
+[92mINFO [0m:      	               (3, 0.8150693504771661),
+[92mINFO [0m:      	               (4, 0.8317774366982611),
+[92mINFO [0m:      	               (5, 0.8150693504771661)],
+[92mINFO [0m:      	 'recall': [(1, 0.4255050023178432),
+[92mINFO [0m:      	            (2, 0.8115879694014164),
+[92mINFO [0m:      	            (3, 0.8423118590629197),
+[92mINFO [0m:      	            (4, 0.8423118590629197),
+[92mINFO [0m:      	            (5, 0.8423118590629197)]}
+[92mINFO [0m:      
+
+[server] run complete. Round-by-round history:

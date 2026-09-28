@@ -63,6 +63,27 @@ DP_LR = 5e-3
 # privacy-utility tradeoff evidence, so it must be easy to flip in a demo.
 USE_DP = False
 
+# Phase 5: when set (--save-weights PATH), every fit() writes this node's local
+# weights to disk so src/manual_fedavg.py can re-derive the server's aggregate
+# by hand and prove it matches Flower's FedAvg tensor-for-tensor.
+SAVE_WEIGHTS_PATH = None
+
+
+def _save_weights(path: str, state_dict, num_examples: int, partition: str) -> None:
+    """Persist this node's post-fit weights for Phase 5's manual FedAvg check.
+
+    Only tensors and scalars are written - the same no-raw-data invariant that
+    `fit` asserts over the network applies to disk too.
+    """
+    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+    torch.save({
+        "state_dict": {k: v.detach().cpu() for k, v in state_dict.items()},
+        "num_examples": int(num_examples),
+        "partition": partition,
+    }, path)
+    print(f"[client:{partition}] saved local weights -> {path} "
+          f"(n={num_examples})", flush=True)
+
 
 def _weights_tensor(y_train, pos_weight: float) -> torch.Tensor:
     """Class-balanced per-sample loss weights (same scheme as the baseline)."""
@@ -191,6 +212,12 @@ class FlowerClient(fl.client.NumPyClient):
         if USE_DP and self.epsilon is not None:
             fit_metrics["epsilon"] = float(self.epsilon)
 
+        # Phase 5: keep the exact weights this node just sent, so
+        # src/manual_fedavg.py can re-derive the server's aggregate by hand.
+        if SAVE_WEIGHTS_PATH:
+            _save_weights(SAVE_WEIGHTS_PATH, self.model.state_dict(),
+                          len(self.X_train), self.partition)
+
         return weights, len(self.X_train), fit_metrics
 
     def evaluate(self, parameters, config):
@@ -215,7 +242,7 @@ class FlowerClient(fl.client.NumPyClient):
 
 
 def main() -> None:
-    global LOCAL_EPOCHS, USE_DP
+    global LOCAL_EPOCHS, USE_DP, SAVE_WEIGHTS_PATH
 
     parser = argparse.ArgumentParser(description="FedGuard Flower client")
     parser.add_argument("--partition", choices=["node1", "node2"], required=True,
@@ -228,11 +255,15 @@ def main() -> None:
                         help="force differential privacy ON for this run")
     parser.add_argument("--no-dp", dest="use_dp", action="store_false",
                         help="force differential privacy OFF for this run")
+    parser.add_argument("--save-weights", dest="save_weights", default=None,
+                        metavar="PATH",
+                        help="Phase 5: write this node's local weights to PATH after every fit()")
     args = parser.parse_args()
 
     LOCAL_EPOCHS = args.local_epochs
     if args.use_dp is not None:
         USE_DP = args.use_dp
+    SAVE_WEIGHTS_PATH = args.save_weights
 
     load_env()
     server_address = args.server_address or f"localhost:{os.getenv('FLOWER_SERVER_PORT', '8080')}"

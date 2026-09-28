@@ -31,6 +31,40 @@ from metrics_logger import (  # noqa: E402
 from model import build_model  # noqa: E402
 
 
+def install_connection_logger() -> None:
+    """Phase 4 evidence: log the source IP of every client that registers.
+
+    Flower's own log only says "sampled 2 clients (out of 2)" - it never shows
+    WHERE those clients came from. The project's validation requires the
+    orchestrator log to prove one client is the AWS EC2 public IP and the other
+    is the GCP VM, so we wrap Flower's module-level register_client_proxy hook
+    (which receives the gRPC ServicerContext) and print context.peer().
+    """
+    try:
+        from flwr.server.superlink.fleet.grpc_bidi import (
+            flower_service_servicer as fss,
+        )
+    except ImportError:
+        print("[server] WARNING: Flower servicer module not found - "
+              "client connection IPs will not be logged", flush=True)
+        return
+    if getattr(fss, "_fedguard_connection_logger", False):
+        return
+
+    original = fss.register_client_proxy
+
+    def register_with_log(client_manager, client_proxy, context):
+        ok = original(client_manager, client_proxy, context)
+        if ok:
+            total = len(getattr(client_manager, "clients", {}) or {})
+            print(f"[server] client connected: cid={client_proxy.cid} "
+                  f"peer={context.peer()} connected={total}", flush=True)
+        return ok
+
+    fss.register_client_proxy = register_with_log
+    fss._fedguard_connection_logger = True
+
+
 def weighted_average(results) -> dict:
     """Weighted mean of client metrics: sum(n_i * m_i) / sum(n_i).
 
@@ -53,10 +87,11 @@ def weighted_average(results) -> dict:
 class LoggingFedAvg(fl.server.strategy.FedAvg):
     """FedAvg that writes one metrics row per round to results/results.csv."""
 
-    def __init__(self, source: str, results_path=None, **kwargs):
+    def __init__(self, source: str, results_path=None, save_weights_path=None, **kwargs):
         super().__init__(**kwargs)
         self.source = source
         self.results_path = results_path
+        self.save_weights_path = save_weights_path
         self.last_fit_metrics: dict = {}
 
     def aggregate_fit(self, server_round, results, failures):
@@ -69,6 +104,25 @@ class LoggingFedAvg(fl.server.strategy.FedAvg):
                   flush=True)
             if eps is not None:
                 print(f"[server] round {server_round}: mean client epsilon = {eps:.4f}", flush=True)
+            # Phase 5: persist Flower's own aggregate so manual_fedavg.py can
+            # compare its hand-written average against this file.
+            if self.save_weights_path:
+                try:
+                    import torch
+                    from flwr.common import parameters_to_ndarrays
+
+                    arrays = parameters_to_ndarrays(aggregated[0])
+                    keys = list(build_model().state_dict().keys())
+                    state = {k: torch.tensor(v, dtype=torch.float32)
+                             for k, v in zip(keys, arrays)}
+                    path = self.save_weights_path.replace("{round}", str(server_round))
+                    os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
+                    torch.save({"state_dict": state, "server_round": server_round}, path)
+                    print(f"[server] round {server_round}: saved global weights -> {path}",
+                          flush=True)
+                except Exception as exc:  # noqa: BLE001
+                    print(f"[server] WARNING: could not save global weights: {exc}",
+                          flush=True)
         return aggregated
 
     def aggregate_evaluate(self, server_round, results, failures):
@@ -92,11 +146,13 @@ class LoggingFedAvg(fl.server.strategy.FedAvg):
         return loss, metrics
 
 
-def build_strategy(source: str, results_path=None) -> LoggingFedAvg:
+def build_strategy(source: str, results_path=None,
+                   save_weights_path=None) -> LoggingFedAvg:
     """FedAvg with the two callbacks the plan requires."""
     return LoggingFedAvg(
         source=source,
         results_path=results_path,
+        save_weights_path=save_weights_path,
         fraction_fit=1.0,            # both nodes train every round
         fraction_evaluate=1.0,       # both nodes evaluate every round
         min_fit_clients=2,
@@ -122,12 +178,17 @@ def main() -> None:
     parser.add_argument("--results_path", default=None, help="override results CSV path")
     parser.add_argument("--append", action="store_true",
                         help="append to existing rows for this source instead of replacing them")
+    parser.add_argument("--save-weights", dest="save_weights", default=None,
+                        metavar="PATH",
+                        help="Phase 5: save Flower's aggregated global weights each round "
+                             "to PATH ('{round}' in the path expands per round)")
     args = parser.parse_args()
 
     if not args.append:
         reset_results_for_source(args.source, args.results_path or DEFAULT_CSV)
 
-    strategy = build_strategy(args.source, args.results_path)
+    strategy = build_strategy(args.source, args.results_path, args.save_weights)
+    install_connection_logger()
 
     print("=" * 70)
     print(f"PHASE 2 - FedAvg orchestrator  |  rounds={args.num_rounds}  "

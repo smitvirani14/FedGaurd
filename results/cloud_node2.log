@@ -1,0 +1,135 @@
+[run_node] partition=node2 server=localhost:8080 dp=node2 localhost 8080 --no-dp
+[client:node2] connecting to orchestrator at localhost:8080
+[client:node2] loaded 91,099 train / 22,775 test rows, pos_weight=771.0 DP=OFF
+[93mWARNING [0m:   DEPRECATED FEATURE: flwr.client.start_numpy_client() is deprecated. 
+	Instead, use `flwr.client.start_client()` by ensuring you first call the `.to_client()` method as shown below: 
+	flwr.client.start_client(
+		server_address='<IP>:<PORT>',
+		client=FlowerClient().to_client(), # <-- where FlowerClient is of type flwr.client.NumPyClient object
+	)
+	Using `start_numpy_client()` is deprecated.
+
+            This is a deprecated feature. It will be removed
+            entirely in future versions of Flower.
+        
+09/28/2026 09:05:12:WARNING:DEPRECATED FEATURE: flwr.client.start_numpy_client() is deprecated. 
+	Instead, use `flwr.client.start_client()` by ensuring you first call the `.to_client()` method as shown below: 
+	flwr.client.start_client(
+		server_address='<IP>:<PORT>',
+		client=FlowerClient().to_client(), # <-- where FlowerClient is of type flwr.client.NumPyClient object
+	)
+	Using `start_numpy_client()` is deprecated.
+
+            This is a deprecated feature. It will be removed
+            entirely in future versions of Flower.
+        
+[93mWARNING [0m:   DEPRECATED FEATURE: flwr.client.start_client() is deprecated.
+	Instead, use the `flower-supernode` CLI command to start a SuperNode as shown below:
+
+		$ flower-supernode --insecure --superlink='<IP>:<PORT>'
+
+	To view all available options, run:
+
+		$ flower-supernode --help
+
+	Using `start_client()` is deprecated.
+
+            This is a deprecated feature. It will be removed
+            entirely in future versions of Flower.
+        
+09/28/2026 09:05:12:WARNING:DEPRECATED FEATURE: flwr.client.start_client() is deprecated.
+	Instead, use the `flower-supernode` CLI command to start a SuperNode as shown below:
+
+		$ flower-supernode --insecure --superlink='<IP>:<PORT>'
+
+	To view all available options, run:
+
+		$ flower-supernode --help
+
+	Using `start_client()` is deprecated.
+
+            This is a deprecated feature. It will be removed
+            entirely in future versions of Flower.
+        
+09/28/2026 09:05:12:DEBUG:Using InMemoryObjectStore
+09/28/2026 09:05:12:DEBUG:Opened insecure gRPC connection (no certificates were passed)
+09/28/2026 09:05:12:DEBUG:ChannelConnectivity.IDLE
+09/28/2026 09:05:12:DEBUG:ChannelConnectivity.CONNECTING
+09/28/2026 09:05:12:DEBUG:ChannelConnectivity.READY
+[92mINFO [0m:      
+09/28/2026 09:05:45:INFO:
+[92mINFO [0m:      Received: train message c7fe01ec-4f80-4f42-a40d-f65881159402
+09/28/2026 09:05:45:INFO:Received: train message c7fe01ec-4f80-4f42-a40d-f65881159402
+[client:node2] fit() sent 4097 weight values (0 raw rows)
+[92mINFO [0m:      Sent reply
+09/28/2026 09:05:47:INFO:Sent reply
+[92mINFO [0m:      
+09/28/2026 09:05:47:INFO:
+[92mINFO [0m:      Received: evaluate message 062b00eb-4334-4201-9580-504be63592c9
+09/28/2026 09:05:47:INFO:Received: evaluate message 062b00eb-4334-4201-9580-504be63592c9
+[client:node2] round-eval acc=0.9989 recall=0.4333 auc=0.9573
+[92mINFO [0m:      Sent reply
+09/28/2026 09:05:47:INFO:Sent reply
+[92mINFO [0m:      
+09/28/2026 09:05:47:INFO:
+[92mINFO [0m:      Received: train message b426ec19-ff3e-4c63-a34e-079b24e4d335
+09/28/2026 09:05:47:INFO:Received: train message b426ec19-ff3e-4c63-a34e-079b24e4d335
+[client:node2] fit() sent 4097 weight values (0 raw rows)
+[92mINFO [0m:      Sent reply
+09/28/2026 09:05:49:INFO:Sent reply
+[92mINFO [0m:      
+09/28/2026 09:05:49:INFO:
+[92mINFO [0m:      Received: evaluate message c2a3d484-f75e-42ed-98c4-7e19d34debe1
+09/28/2026 09:05:49:INFO:Received: evaluate message c2a3d484-f75e-42ed-98c4-7e19d34debe1
+[client:node2] round-eval acc=0.9993 recall=0.8333 auc=0.9780
+[92mINFO [0m:      Sent reply
+09/28/2026 09:05:49:INFO:Sent reply
+[92mINFO [0m:      
+09/28/2026 09:05:49:INFO:
+[92mINFO [0m:      Received: train message f338c35d-72bc-4d9b-8ca7-c008b0175f00
+09/28/2026 09:05:49:INFO:Received: train message f338c35d-72bc-4d9b-8ca7-c008b0175f00
+[client:node2] fit() sent 4097 weight values (0 raw rows)
+[92mINFO [0m:      Sent reply
+09/28/2026 09:05:51:INFO:Sent reply
+[92mINFO [0m:      
+09/28/2026 09:05:51:INFO:
+[92mINFO [0m:      Received: evaluate message f4cc1bf3-20d4-4e3a-9ed6-97ffee6a4333
+09/28/2026 09:05:51:INFO:Received: evaluate message f4cc1bf3-20d4-4e3a-9ed6-97ffee6a4333
+[client:node2] round-eval acc=0.9994 recall=0.8667 auc=0.9909
+[92mINFO [0m:      Sent reply
+09/28/2026 09:05:51:INFO:Sent reply
+[92mINFO [0m:      
+09/28/2026 09:05:51:INFO:
+[92mINFO [0m:      Received: train message 845bc38b-4206-4043-afbd-b70694df2d45
+09/28/2026 09:05:51:INFO:Received: train message 845bc38b-4206-4043-afbd-b70694df2d45
+[client:node2] fit() sent 4097 weight values (0 raw rows)
+[92mINFO [0m:      Sent reply
+09/28/2026 09:05:52:INFO:Sent reply
+[92mINFO [0m:      
+09/28/2026 09:05:53:INFO:
+[92mINFO [0m:      Received: evaluate message b5343acb-7674-407c-a734-db50c796c724
+09/28/2026 09:05:53:INFO:Received: evaluate message b5343acb-7674-407c-a734-db50c796c724
+[client:node2] round-eval acc=0.9994 recall=0.8667 auc=0.9942
+[92mINFO [0m:      Sent reply
+09/28/2026 09:05:53:INFO:Sent reply
+[92mINFO [0m:      
+09/28/2026 09:05:53:INFO:
+[92mINFO [0m:      Received: train message 843ccc43-2ae8-497b-ba8d-4c5e2a8846f0
+09/28/2026 09:05:53:INFO:Received: train message 843ccc43-2ae8-497b-ba8d-4c5e2a8846f0
+[client:node2] fit() sent 4097 weight values (0 raw rows)
+[92mINFO [0m:      Sent reply
+09/28/2026 09:05:54:INFO:Sent reply
+[92mINFO [0m:      
+09/28/2026 09:05:55:INFO:
+[92mINFO [0m:      Received: evaluate message a083df28-e52f-42f2-a02a-4a9e337992c1
+09/28/2026 09:05:55:INFO:Received: evaluate message a083df28-e52f-42f2-a02a-4a9e337992c1
+[client:node2] round-eval acc=0.9994 recall=0.8667 auc=0.9967
+[92mINFO [0m:      Sent reply
+09/28/2026 09:05:55:INFO:Sent reply
+[92mINFO [0m:      
+09/28/2026 09:05:55:INFO:
+[92mINFO [0m:      Received: reconnect message e79111d3-b45f-4a51-9a2b-55beb4312183
+09/28/2026 09:05:55:INFO:Received: reconnect message e79111d3-b45f-4a51-9a2b-55beb4312183
+09/28/2026 09:05:55:DEBUG:gRPC channel closed
+[92mINFO [0m:      Disconnect and shut down
+09/28/2026 09:05:55:INFO:Disconnect and shut down

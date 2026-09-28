@@ -1,0 +1,18 @@
+# FedGuard pinned dependencies (Python 3.11)
+#
+# Install torch from the CPU index first - it avoids pulling ~2 GB of CUDA
+# wheels that a free-tier 1 vCPU VM can never use:
+#     pip install torch --index-url https://download.pytorch.org/whl/cpu
+#     pip install -r requirements.txt
+#
+# Platform notes:
+#   local dev machine : macOS arm64 (Apple Silicon)
+#   cloud nodes       : Linux x86_64 - pip resolves the matching wheels itself
+torch==2.14.0
+flwr==1.38.0
+opacus==1.6.0
+pandas==3.0.6
+scikit-learn==1.9.1
+streamlit==1.64.0
+python-dotenv==1.2.3
+numpy==2.4.6
